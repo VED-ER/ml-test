@@ -1,6 +1,7 @@
 import { Button, Image, StyleSheet, Text, View } from "react-native"
 import * as ImagePicker from "expo-image-picker"
 import { useState } from "react"
+import { hello } from "@/modules/text-recognition"
 
 export default function Index() {
     const [image, setImage] = useState("")
@@ -21,6 +22,7 @@ export default function Index() {
 
     return (
         <View style={styles.container}>
+            <Button title="TEST" onPress={hello} />
             <Button
                 title="Pick an image from camera roll"
                 onPress={pickImage}
