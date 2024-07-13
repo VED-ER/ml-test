@@ -1,44 +1,57 @@
 import ExpoModulesCore
+import UIKit
+import MLKitTextRecognition
+import MLKitVision
 
 public class TextRecognitionModule: Module {
-  // Each module class must implement the definition function. The definition consists of components
-  // that describes the module's functionality and behavior.
-  // See https://docs.expo.dev/modules/module-api for more details about available components.
   public func definition() -> ModuleDefinition {
-    // Sets the name of the module that JavaScript code will use to refer to the module. Takes a string as an argument.
-    // Can be inferred from module's class name, but it's recommended to set it explicitly for clarity.
-    // The module will be accessible from `requireNativeModule('TextRecognition')` in JavaScript.
     Name("TextRecognition")
 
-    // Sets constant properties on the module. Can take a dictionary or a closure that returns a dictionary.
-    Constants([
-      "PI": Double.pi
-    ])
+	let latinOptions = TextRecognizerOptions()
+ 	let latinTextRecognizer = TextRecognizer.textRecognizer(options:latinOptions)
 
-    // Defines event names that the module can send to JavaScript.
-    Events("onChange")
-
-    // Defines a JavaScript synchronous function that runs the native code on the JavaScript thread.
-    Function("hello") {
-      return "Hello world! 👋"
-    }
-
-    // Defines a JavaScript function that always returns a Promise and whose native code
-    // is by default dispatched on the different thread than the JavaScript runtime runs on.
-    AsyncFunction("setValueAsync") { (value: String) in
-      // Send an event to JavaScript.
-      self.sendEvent("onChange", [
-        "value": value
-      ])
-    }
-
-    // Enables the module to be used as a native view. Definition components that are accepted as part of the
-    // view definition: Prop, Events.
-    View(TextRecognitionView.self) {
-      // Defines a setter for the `name` prop.
-      Prop("name") { (view: TextRecognitionView, prop: String) in
-        print(prop)
-      }
+ 	AsyncFunction("recognizeText") { (imgString: String, promise: Promise) in
+		if let image = self.convertStringToUIImage(imgString) {
+			let visionImage = VisionImage(image: image)
+            latinTextRecognizer.process(visionImage) { result, error in
+  			guard error == nil, let result = result else {
+			  // Error handling
+			  promise.reject(FailedToLoadImage())
+			  return
+  			}
+  			// Recognized text
+			promise.resolve(result.text)
+			}
+			// return recognizedText
+        } else {
+			promise.reject(FailedToLoadImage())
+        }
     }
   }
+
+  private func convertStringToUIImage(_ fileURLString: String) -> UIImage? {
+    // Ensure the string is a valid URL
+    guard let fileURL = URL(string: fileURLString) else {
+        print("Invalid URL string")
+        return nil
+    }
+
+    // Ensure the URL points to a file
+    guard fileURL.isFileURL else {
+        print("URL is not a file URL")
+        return nil
+    }
+
+    do {
+        // Get the data from the file URL
+        let imageData = try Data(contentsOf: fileURL)
+        
+        // Convert the data to UIImage
+        let image = UIImage(data: imageData)
+        return image
+    } catch {
+        print("Error loading image data: \(error)")
+        return nil
+    }
+}
 }

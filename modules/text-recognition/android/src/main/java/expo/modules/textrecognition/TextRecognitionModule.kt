@@ -2,46 +2,42 @@ package expo.modules.textrecognition
 
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.common.InputImage
+import expo.modules.kotlin.Promise
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import java.io.IOException
+import android.net.Uri
+import android.content.Context
 
 class TextRecognitionModule : Module() {
-  // Each module class must implement the definition function. The definition consists of components
-  // that describes the module's functionality and behavior.
-  // See https://docs.expo.dev/modules/module-api for more details about available components.
+  
   override fun definition() = ModuleDefinition {
-    // Sets the name of the module that JavaScript code will use to refer to the module. Takes a string as an argument.
-    // Can be inferred from module's class name, but it's recommended to set it explicitly for clarity.
-    // The module will be accessible from `requireNativeModule('TextRecognition')` in JavaScript.
     Name("TextRecognition")
 
-    // Sets constant properties on the module. Can take a dictionary or a closure that returns a dictionary.
-    Constants(
-      "PI" to Math.PI
-    )
+    AsyncFunction("recognizeText") { uri: String, promise: Promise ->
+	val filePathUri = Uri.parse(uri)
+	val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
-    // Defines event names that the module can send to JavaScript.
-    Events("onChange")
-
-    // Defines a JavaScript synchronous function that runs the native code on the JavaScript thread.
-    Function("hello") {
-      "Hello world! 👋"
-    }
-
-    // Defines a JavaScript function that always returns a Promise and whose native code
-    // is by default dispatched on the different thread than the JavaScript runtime runs on.
-    AsyncFunction("setValueAsync") { value: String ->
-      // Send an event to JavaScript.
-      sendEvent("onChange", mapOf(
-        "value" to value
-      ))
-    }
-
-    // Enables the module to be used as a native view. Definition components that are accepted as part of
-    // the view definition: Prop, Events.
-    View(TextRecognitionView::class) {
-      // Defines a setter for the `name` prop.
-      Prop("name") { view: TextRecognitionView, prop: String ->
-        println(prop)
+	val image: InputImage
+	try {
+      image = InputImage.fromFilePath(context, filePathUri)
+	  recognizer.process(image)
+      .addOnSuccessListener { visionText ->
+            promise.resolve(visionText.text)
       }
-    }
+      .addOnFailureListener { _ ->
+            promise.reject(TextRecognitionExceptions.TextRecognitionFailed())
+      }
+    } catch (e: IOException) {
+		promise.reject(TextRecognitionExceptions.InputImageFailed())
+	}
+	
+	
+	}
+	
   }
+  private val context
+  get() = requireNotNull(appContext.reactContext)
+
 }

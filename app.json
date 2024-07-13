@@ -13,13 +13,15 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.mltest"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.anonymous.mltest"
     },
     "web": {
       "bundler": "metro",
@@ -27,7 +29,22 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+	  [
+        "expo-build-properties",
+        {
+          "ios": {
+            "extraPods":[
+				{ "name": "GoogleMLKit/TextRecognition", "version": "3.2.0"}
+			]
+          },
+		  "android": {
+			"extraMavenRepos":[
+				{ "url": "https://maven.google.com/" }
+			]
+		  }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
